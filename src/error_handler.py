@@ -7,6 +7,8 @@ from typing import Optional
 
 import httpx
 
+from src.config import LLM_MODEL_NAME, OLLAMA_BASE_URL
+
 try:
     from ollama import ResponseError as OllamaResponseError
 except ImportError:  # Permite informar a dependência ausente de forma amigável.
@@ -86,7 +88,7 @@ def classify_error(error: BaseException, operation: str = "consulta") -> Friendl
             return FriendlyError(
                 "Modelo local não encontrado no Ollama.",
                 "O modelo configurado ainda não foi baixado.",
-                "execute 'ollama pull llama3.2:3b' e tente novamente.",
+                f"execute 'ollama pull {LLM_MODEL_NAME}' e tente novamente.",
             )
         return FriendlyError(
             "O Ollama recusou a solicitação.",
@@ -107,7 +109,7 @@ def classify_error(error: BaseException, operation: str = "consulta") -> Friendl
     ):
         return FriendlyError(
             "Serviço Ollama indisponível.",
-            "Não foi possível conectar a http://localhost:11434.",
+            f"Não foi possível conectar a {OLLAMA_BASE_URL}.",
             "inicie o aplicativo Ollama ou execute 'ollama serve' e tente novamente.",
         )
 

@@ -14,6 +14,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from src.config import DOCS_DIR, FAISS_INDEX_DIR, SUPPORTED_EXTENSIONS
 from src.error_handler import FriendlyError, print_friendly_error
+from src.ingest import ingest_documents
 from src.output_formatter import format_rag_output, format_sources as _format_sources
 
 
@@ -71,11 +72,11 @@ def format_sources(source_docs: list) -> str:
     return _format_sources(source_docs)
 
 
-def run_single_query(rag_chain, query: str) -> None:
-    """Executa uma única consulta e exibe a resposta com as fontes."""
+def run_single_query(rag_chain, query: str) -> bool:
+    """Executa uma consulta, exibe o resultado e informa se houve sucesso."""
     query = query.strip()
     if not query:
-        return
+        return False
 
     print("\n🔍 Buscando contexto e gerando resposta...")
     try:
@@ -83,10 +84,12 @@ def run_single_query(rag_chain, query: str) -> None:
         print("\n" + "-" * 60)
         print(format_rag_output(result))
         print("-" * 60)
+        return True
 
     except Exception as error:
         print()
         print_friendly_error(error, operation="consulta", file=sys.stdout)
+        return False
 
 
 def interactive_cli(rag_chain) -> None:
@@ -131,7 +134,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Verifica se os arquivos do índice FAISS existem
+    print("⏳ Atualizando o índice com os documentos locais...")
+    try:
+        ingest_documents()
+    except Exception as error:
+        print_friendly_error(error, operation="ingestão", file=sys.stdout)
+        sys.exit(1)
+
+    # Confirma que a ingestão produziu os dois arquivos necessários.
     if not check_prerequisites():
         sys.exit(1)
 
@@ -145,7 +155,8 @@ def main() -> None:
         sys.exit(1)
 
     if args.query:
-        run_single_query(rag_chain, args.query)
+        if not run_single_query(rag_chain, args.query):
+            sys.exit(1)
     else:
         interactive_cli(rag_chain)
 

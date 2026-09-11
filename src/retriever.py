@@ -2,9 +2,15 @@
 
 import argparse
 import sys
+import warnings
 from pathlib import Path
 from typing import Optional
 
+warnings.filterwarnings(
+    "ignore",
+    message=r"`langchain-community` is being sunset.*",
+    category=DeprecationWarning,
+)
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
@@ -15,6 +21,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from src.config import FAISS_INDEX_DIR, TOP_K_RESULTS
+from src.error_handler import print_friendly_error
 from src.ingest import load_vector_store
 
 
@@ -80,7 +87,7 @@ def main() -> None:
     try:
         documents = retrieve_documents(args.query, k=args.k)
     except Exception as exc:
-        print(f"❌ Falha na recuperação: {exc}", file=sys.stderr)
+        print_friendly_error(exc, operation="recuperação")
         raise SystemExit(1) from exc
 
     if not documents:

@@ -2,9 +2,15 @@
 
 import argparse
 import sys
+import warnings
 from pathlib import Path
 from typing import Optional, Sequence
 
+warnings.filterwarnings(
+    "ignore",
+    message=r"`langchain-community` is being sunset.*",
+    category=DeprecationWarning,
+)
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings

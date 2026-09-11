@@ -11,7 +11,16 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from src.config import LLM_MODEL_NAME, LLM_TEMPERATURE, OLLAMA_BASE_URL
+from src.config import (
+    LLM_KEEP_ALIVE,
+    LLM_MODEL_NAME,
+    LLM_NUM_CTX,
+    LLM_NUM_GPU,
+    LLM_NUM_PREDICT,
+    LLM_NUM_THREAD,
+    LLM_TEMPERATURE,
+    OLLAMA_BASE_URL,
+)
 
 
 def get_llm(
@@ -37,6 +46,11 @@ def get_llm(
         model=selected_model,
         temperature=selected_temperature,
         base_url=selected_base_url,
+        num_ctx=LLM_NUM_CTX,
+        num_predict=LLM_NUM_PREDICT,
+        num_thread=LLM_NUM_THREAD,
+        num_gpu=LLM_NUM_GPU,
+        keep_alive=LLM_KEEP_ALIVE,
     )
 
 

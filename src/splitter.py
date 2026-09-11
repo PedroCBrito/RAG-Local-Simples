@@ -38,6 +38,10 @@ def get_text_splitter(
     effective_chunk_size = chunk_size if chunk_size is not None else CHUNK_SIZE
     effective_chunk_overlap = chunk_overlap if chunk_overlap is not None else CHUNK_OVERLAP
 
+    if effective_chunk_size <= 0:
+        raise ValueError("O 'chunk_size' deve ser maior que zero.")
+    if effective_chunk_overlap < 0:
+        raise ValueError("O 'chunk_overlap' não pode ser negativo.")
     if effective_chunk_overlap >= effective_chunk_size:
         raise ValueError("O 'chunk_overlap' deve ser estritamente menor que o 'chunk_size'.")
 
@@ -86,7 +90,9 @@ def split_documents(
 
     for chunk in raw_chunks:
         # Recupera chave única do documento de origem (filename ou source)
-        source_key = chunk.metadata.get("source", "unknown")
+        source_key = chunk.metadata.get("source") or chunk.metadata.get(
+            "filename", "unknown"
+        )
         current_index = doc_chunk_counters.get(source_key, 0)
         doc_chunk_counters[source_key] = current_index + 1
 

@@ -4,11 +4,18 @@ Processa arquivos nos formatos .pdf e .txt a partir da pasta de consultas.
 """
 
 import sys
+import warnings
 from pathlib import Path
 from typing import List, Optional
 
 from langchain_core.documents import Document
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
+
+warnings.filterwarnings(
+    "ignore",
+    message=r"`langchain-community` is being sunset.*",
+    category=DeprecationWarning,
+)
+from langchain_community.document_loaders import PyPDFLoader
 
 # Garante acesso aos módulos do projeto
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -43,16 +50,23 @@ def load_txt_file(file_path: Path) -> List[Document]:
     """
     Carrega arquivo TXT com suporte resiliente a múltiplos encodings (UTF-8, Latin-1, CP1252).
     """
-    encodings = ["utf-8", "latin-1", "cp1252"]
+    # CP1252 vem antes de Latin-1 porque ambos aceitam quase todos os bytes,
+    # mas CP1252 preserva corretamente aspas e travessões comuns no Windows.
+    encodings = ["utf-8", "cp1252", "latin-1"]
     for encoding in encodings:
         try:
-            loader = TextLoader(str(file_path), encoding=encoding)
-            docs = loader.load()
-            for doc in docs:
-                doc.metadata["filename"] = file_path.name
-                doc.metadata["extension"] = ".txt"
-                doc.metadata["file_size"] = file_path.stat().st_size
-            return docs
+            content = file_path.read_text(encoding=encoding)
+            return [
+                Document(
+                    page_content=content,
+                    metadata={
+                        "source": str(file_path),
+                        "filename": file_path.name,
+                        "extension": ".txt",
+                        "file_size": file_path.stat().st_size,
+                    },
+                )
+            ]
         except UnicodeDecodeError:
             continue
         except Exception as e:
@@ -88,10 +102,14 @@ def scan_and_load_documents(directory_path: Optional[Path | str] = None) -> List
     print(f"📂 Iniciando varredura em: '{target_dir}'")
     
     # Busca arquivos suportados de forma recursiva
-    found_files = [
-        f for f in target_dir.rglob("*")
-        if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS
-    ]
+    found_files = sorted(
+        (
+            f
+            for f in target_dir.rglob("*")
+            if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS
+        ),
+        key=lambda path: str(path).lower(),
+    )
 
     if not found_files:
         print(f"ℹ️  Nenhum documento ({', '.join(sorted(SUPPORTED_EXTENSIONS))}) encontrado em '{target_dir}'.")

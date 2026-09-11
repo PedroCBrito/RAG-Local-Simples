@@ -2,23 +2,29 @@
 flowchart TD
     subgraph CLI ["1. Camada de Interface (CLI)"]
         User(["Usuário"]) -->|"Pergunta"| Main["main.py (Terminal)"]
-        Main -->|"Exibe Resposta + Fontes"| User
+        Main -->|"Reindexa ao iniciar"| Ingest
+        Main --> Output["output_formatter.py<br>Resposta + Fontes"]
+        Output --> User
+        Errors["error_handler.py<br>Mensagens amigáveis"] --> Main
     end
 
     subgraph INGEST ["2. Camada de Ingestão e Embeddings"]
-        Docs[("docs_consulta/<br>(PDF, TXT)")] -->|"Carrega e fragmenta"| Chunking["Text Splitter<br>(Chunks)"]
-        Chunking -->|"Vetoriza texto"| EmbedModel["Modelo de Embeddings<br>(Local / Ollama)"]
+        Docs[("docs_consulta/<br>PDF e TXT")] --> Loader["loader.py"]
+        Loader --> Chunking["splitter.py<br>Chunks + metadados"]
+        Chunking --> EmbedModel["OllamaEmbeddings<br>nomic-embed-text"]
     end
 
     subgraph VECTOR ["3. Camada de Armazenamento Vetorial"]
-        EmbedModel -->|"Indexa e persiste"| FAISS[("FAISS Index<br>(faiss_index/)")]
-        Main -->|"Consulta semântica"| Retriever["Retriever<br>(Top-K Similaridade)"]
-        FAISS <-->|"Busca vetorial"| Retriever
+        EmbedModel --> Ingest["ingest.py"]
+        Ingest -->|"Salva e recarrega"| FAISS[("faiss_index/<br>index.faiss + index.pkl")]
+        FAISS --> Retriever["retriever.py<br>Similaridade Top-K"]
     end
 
     subgraph LLM_LAYER ["4. Camada de Inferência (LLM)"]
-        Retriever -->|"Contexto recuperado"| Prompt["Prompt Template<br>(Contexto + Pergunta)"]
-        Prompt -->|"Injeta prompt"| LLM["LLM Local (Ollama)<br>(Llama 3.2 / Phi-3)"]
-        LLM -->|"Resposta final"| Main
+        Main --> Retriever
+        Retriever --> Chain["rag_chain.py<br>Prompt restritivo + LCEL"]
+        Chain --> LLM["ChatOllama<br>llama3.2:3b / temperatura 0.0"]
+        LLM --> Parser["StrOutputParser"]
+        Parser -->|"answer + source_documents + sources"| Main
     end
 ```
