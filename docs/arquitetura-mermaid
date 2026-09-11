@@ -1,0 +1,24 @@
+```mermaid
+flowchart TD
+    subgraph CLI ["1. Camada de Interface (CLI)"]
+        User(["Usuário"]) -->|"Pergunta"| Main["main.py (Terminal)"]
+        Main -->|"Exibe Resposta + Fontes"| User
+    end
+
+    subgraph INGEST ["2. Camada de Ingestão e Embeddings"]
+        Docs[("docs_consulta/<br>(PDF, TXT)")] -->|"Carrega e fragmenta"| Chunking["Text Splitter<br>(Chunks)"]
+        Chunking -->|"Vetoriza texto"| EmbedModel["Modelo de Embeddings<br>(Local / Ollama)"]
+    end
+
+    subgraph VECTOR ["3. Camada de Armazenamento Vetorial"]
+        EmbedModel -->|"Indexa e persiste"| FAISS[("FAISS Index<br>(faiss_index/)")]
+        Main -->|"Consulta semântica"| Retriever["Retriever<br>(Top-K Similaridade)"]
+        FAISS <-->|"Busca vetorial"| Retriever
+    end
+
+    subgraph LLM_LAYER ["4. Camada de Inferência (LLM)"]
+        Retriever -->|"Contexto recuperado"| Prompt["Prompt Template<br>(Contexto + Pergunta)"]
+        Prompt -->|"Injeta prompt"| LLM["LLM Local (Ollama)<br>(Llama 3.2 / Phi-3)"]
+        LLM -->|"Resposta final"| Main
+    end
+```

@@ -1,0 +1,129 @@
+# ==========================================
+# 1. Bytecode & Cache do Python
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==========================================
+# 2. Ambientes Virtuais
+# ==========================================
+.env/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================================
+# 3. Variáveis de Ambiente & Segredos
+# ==========================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+
+# ==========================================
+# 4. Vector Stores Locais & Índices RAG
+# ==========================================
+# Chroma DB
+chroma/
+chroma_db/
+.chroma/
+
+# FAISS
+faiss_index/
+*.index
+*.faiss
+*.pkl
+
+# LanceDB / Qdrant / DuckDB / outros bancos vetoriais locais
+lancedb/
+.lancedb/
+qdrant_storage/
+*.lance
+*.parquet
+
+# Cache de Embeddings & Modelos Locais (HuggingFace, sentence-transformers, etc.)
+models/
+hf_cache/
+.cache/
+embeddings_cache/
+
+# ==========================================
+# 5. Dados & Documentos Locais (Ingestão RAG)
+# ==========================================
+data/raw/
+data/processed/
+docs/raw/
+docs_consulta/*
+!docs_consulta/.gitkeep
+*.pdf
+*.csv
+*.jsonl
+!requirements.txt
+
+
+# ==========================================
+# 6. Bancos de Dados & Logs
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+
+# ==========================================
+# 7. IDEs & Editores de Código
+# ==========================================
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# ==========================================
+# 8. Jupyter Notebooks
+# ==========================================
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# ==========================================
+# 9. Testes & Cobertura
+# ==========================================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==========================================
+# 10. Arquivos do Sistema Operacional
+# ==========================================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
