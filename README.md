@@ -48,7 +48,6 @@ Pipeline de *Retrieval-Augmented Generation* (RAG) local, projetado para consult
 ├── README.md
 ├── requirements.txt
 ├── docs/                 # Escopo, backlog concluído e diagrama arquitetural
-├── prompts/              # Histórico dos prompts de implementação
 ├── docs_consulta/        # Diretório de entrada dos documentos para consulta
 ├── faiss_index/          # Armazenamento persistido dos índices vetoriais
 ├── src/
