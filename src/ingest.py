@@ -16,6 +16,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from src.config import DOCS_DIR, FAISS_INDEX_DIR
 from src.embeddings import get_embedding_model
+from src.error_handler import print_friendly_error
 from src.loader import scan_and_load_documents
 from src.splitter import split_documents
 
@@ -133,7 +134,7 @@ def main() -> None:
         else:
             ingest_documents()
     except Exception as exc:
-        print(f"❌ Falha na ingestão: {exc}", file=sys.stderr)
+        print_friendly_error(exc, operation="ingestão")
         raise SystemExit(1) from exc
 
 

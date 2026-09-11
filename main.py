@@ -12,9 +12,9 @@ ROOT_DIR = Path(__file__).resolve().parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-# Constantes e caminhos padrão
-FAISS_INDEX_DIR = ROOT_DIR / "faiss_index"
-DOCS_DIR = ROOT_DIR / "docs_consulta"
+from src.config import DOCS_DIR, FAISS_INDEX_DIR, SUPPORTED_EXTENSIONS
+from src.error_handler import FriendlyError, print_friendly_error
+from src.output_formatter import format_rag_output, format_sources as _format_sources
 
 
 def print_banner() -> None:
@@ -36,38 +36,39 @@ def check_prerequisites() -> bool:
     Retorna True se o índice FAISS existir, False caso contrário.
     """
     index_file = FAISS_INDEX_DIR / "index.faiss"
-    pkl_file = FAISS_INDEX_DIR / "index.pkl"
+    metadata_file = FAISS_INDEX_DIR / "index.pkl"
+    if not (index_file.is_file() and metadata_file.is_file()):
+        has_documents = DOCS_DIR.is_dir() and any(
+            path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS
+            for path in DOCS_DIR.rglob("*")
+        )
+        if not has_documents:
+            error = FriendlyError(
+                "Índice vetorial ausente e pasta de documentos vazia.",
+                f"Nenhum arquivo PDF ou TXT foi encontrado em '{DOCS_DIR.name}/'.",
+                f"adicione documentos em '{DOCS_DIR.name}/' e execute "
+                ".\\.venv\\Scripts\\python.exe src\\ingest.py",
+            )
+        else:
+            error = FileNotFoundError("Índice FAISS ausente ou incompleto.")
+        print_friendly_error(error, operation="inicialização", file=sys.stdout)
+        return False
 
-    if not (index_file.exists() and pkl_file.exists()):
-        print("⚠️  [Aviso]: Índice vetorial não encontrado em 'faiss_index/'.")
-        print(f"👉 Certifique-se de adicionar documentos em '{DOCS_DIR.name}/' e executar a ingestão:")
-        print("   python src/ingest.py\n")
+    if index_file.stat().st_size == 0 or metadata_file.stat().st_size == 0:
+        error = FriendlyError(
+            "Índice vetorial corrompido ou incompleto.",
+            "Um ou mais arquivos do índice estão vazios.",
+            "gere novamente o índice executando "
+            ".\\.venv\\Scripts\\python.exe src\\ingest.py",
+        )
+        print_friendly_error(error, operation="inicialização", file=sys.stdout)
         return False
     return True
 
 
 def format_sources(source_docs: list) -> str:
-    """Formata a lista de documentos e trechos retornados pelo retriever."""
-    if not source_docs:
-        return "Nenhuma fonte encontrada."
-
-    formatted = []
-    seen = set()
-    
-    for i, doc in enumerate(source_docs, 1):
-        source = doc.metadata.get("source", "Documento desconhecido")
-        page = doc.metadata.get("page", None)
-        filename = Path(source).name
-
-        doc_key = (filename, page)
-        if doc_key in seen:
-            continue
-        seen.add(doc_key)
-
-        page_info = f" (Página {page + 1})" if page is not None else ""
-        formatted.append(f"  [{len(seen)}] {filename}{page_info}")
-
-    return "\n".join(formatted)
+    """Mantém compatibilidade com chamadas existentes do formatador de fontes."""
+    return _format_sources(source_docs)
 
 
 def run_single_query(rag_chain, query: str) -> None:
@@ -78,29 +79,14 @@ def run_single_query(rag_chain, query: str) -> None:
 
     print("\n🔍 Buscando contexto e gerando resposta...")
     try:
-        # Suporta tanto chamadas com retorno direto quanto dicionários (invoke)
         result = rag_chain.invoke(query)
+        print("\n" + "-" * 60)
+        print(format_rag_output(result))
+        print("-" * 60)
 
-        if isinstance(result, dict):
-            answer = result.get("answer") or result.get("result") or str(result)
-            source_docs = result.get("source_documents") or result.get("context") or []
-        else:
-            answer = str(result)
-            source_docs = []
-
-        print("\n" + "-" * 50)
-        print("📢 [Resposta]:")
-        print(answer)
-        print("-" * 50)
-
-        if source_docs:
-            print("\n📚 [Fontes Consultadas]:")
-            print(format_sources(source_docs))
-            print("-" * 50)
-
-    except Exception as e:
-        print(f"\n❌ Erro durante a inferência: {e}")
-        print("💡 Dica: Verifique se o serviço do Ollama está em execução (ex.: 'ollama serve').")
+    except Exception as error:
+        print()
+        print_friendly_error(error, operation="consulta", file=sys.stdout)
 
 
 def interactive_cli(rag_chain) -> None:
@@ -109,7 +95,7 @@ def interactive_cli(rag_chain) -> None:
 
     while True:
         try:
-            user_input = input("💬 Pergunta: ").strip()
+            user_input = input("Pergunta: ").strip()
 
             if not user_input:
                 continue
@@ -154,13 +140,8 @@ def main() -> None:
         from src.rag_chain import get_rag_chain
         rag_chain = get_rag_chain()
         print("✅ Sistema pronto para consultas!\n")
-    except ImportError as e:
-        print(f"❌ Erro ao importar cadeia RAG de 'src.rag_chain': {e}")
-        print("💡 Certifique-se de que os módulos dentro de 'src/' foram implementados.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"❌ Falha ao inicializar a cadeia RAG: {e}")
-        print("💡 Certifique-se de que o Ollama está rodando e os modelos estão instalados.")
+    except Exception as error:
+        print_friendly_error(error, operation="inicialização", file=sys.stdout)
         sys.exit(1)
 
     if args.query:
