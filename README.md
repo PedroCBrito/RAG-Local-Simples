@@ -19,23 +19,35 @@ Pipeline de *Retrieval-Augmented Generation* (RAG) local, projetado para consult
 
 ## 2. Arquitetura da Solução
 
-```
-[ docs_consulta/ ] (PDF / TXT)
-        │
-        ▼
-[ Document Loader & Text Splitter ]
-        │
-        ▼
-[ Embeddings Model ] (Local via Ollama)
-        │
-        ▼
-[ FAISS Vector Store ] (Persistência local em disco)
-        │
-        ▼  <─── Pergunta do Usuário
-[ Similarity Search (Top-K) ]
-        │
-        ▼
-[ Contexto + Prompt Template ] ──► [ LLM Local Ollama ] ──► [ Resposta com Fontes ]
+```mermaid
+flowchart TD
+    subgraph CLI ["1. Camada de Interface (CLI)"]
+        User(["Usuário"]) -->|"Pergunta"| Main["main.py (Terminal)"]
+        Main -->|"Reindexa ao iniciar"| Ingest
+        Main --> Output["output_formatter.py<br>Resposta + Fontes"]
+        Output --> User
+        Errors["error_handler.py<br>Mensagens amigáveis"] --> Main
+    end
+
+    subgraph INGEST ["2. Camada de Ingestão e Embeddings"]
+        Docs[("docs_consulta/<br>PDF e TXT")] --> Loader["loader.py"]
+        Loader --> Chunking["splitter.py<br>Chunks + metadados"]
+        Chunking --> EmbedModel["OllamaEmbeddings<br>nomic-embed-text"]
+    end
+
+    subgraph VECTOR ["3. Camada de Armazenamento Vetorial"]
+        EmbedModel --> Ingest["ingest.py"]
+        Ingest -->|"Salva e recarrega"| FAISS[("faiss_index/<br>index.faiss + index.pkl")]
+        FAISS --> Retriever["retriever.py<br>Similaridade Top-K"]
+    end
+
+    subgraph LLM_LAYER ["4. Camada de Inferência (LLM)"]
+        Main --> Retriever
+        Retriever --> Chain["rag_chain.py<br>Prompt restritivo + LCEL"]
+        Chain --> LLM["ChatOllama<br>llama3.2:3b / temperatura 0.0"]
+        LLM --> Parser["StrOutputParser"]
+        Parser -->|"answer + source_documents + sources"| Main
+    end
 ```
 
 ---
