@@ -250,12 +250,3 @@ Os testes cobrem carga e encodings, chunking, FAISS, reload, retriever, LCEL,
 rastreabilidade, formatação, erros comuns e interação com o CLI.
 
 ---
-
-## 9. Critérios de Aceite
-
-1. **Privacidade e Operação Local:** Após o provisionamento inicial, extração, embedding, indexação e inferência ocorrem localmente, sem provedores de IA em nuvem.
-2. **Ingestão Dinâmica:** O sistema deve ler e processar automaticamente os arquivos contidos em `docs_consulta/`.
-3. **Persistência do Índice:** O índice gerado pelo FAISS deve ser salvo em disco local e reutilizado nas consultas, evitando reprocessamento desnecessário dos documentos.
-4. **Fidelidade e Mitigação de Alucinações:** As respostas devem ser estritamente fundamentadas no contexto recuperado da base documental, com declaração explícita de ausência de informação quando o contexto for insuficiente.
-5. **Eficiência Computacional:** Uso de uma LLM de 3B parâmetros, com desempenho condicionado ao hardware disponível.
-6. **Rastreabilidade:** Identificação das fontes (nome do arquivo e trecho) utilizadas na composição da resposta.
